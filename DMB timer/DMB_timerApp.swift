@@ -12,8 +12,7 @@ import SwiftData
 struct DMB_timerApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainTabView()
         }
-        .modelContainer(for: Soldier.self)
     }
 }
