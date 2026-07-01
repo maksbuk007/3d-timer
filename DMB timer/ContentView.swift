@@ -30,7 +30,7 @@ struct ContentView: View {
                 } else {
                     List {
                         ForEach(soldiers) { soldier in
-                            NavigationLink(destination: Text("Здесь будет таймер для \(soldier.name)")) {
+                            NavigationLink(destination: TimerView(soldier: soldier)) {
                                 HStack {
                                     Text(soldier.name)
                                         .foregroundColor(.white)

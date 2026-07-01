@@ -29,22 +29,9 @@
 		8132CFB32FF3CF3E0016C111 /* DMB timerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "DMB timerUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		81F8BBEF2FF53DF600ECFC95 /* Exceptions for "DMB timer" folder in "DMB timer" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Untitled.swift,
-			);
-			target = 8132CF992FF3CF3B0016C111 /* DMB timer */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		8132CF9C2FF3CF3B0016C111 /* DMB timer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				81F8BBEF2FF53DF600ECFC95 /* Exceptions for "DMB timer" folder in "DMB timer" target */,
-			);
 			path = "DMB timer";
 			sourceTree = "<group>";
 		};
