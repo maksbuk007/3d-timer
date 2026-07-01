@@ -23,8 +23,8 @@ struct SettingsView: View {
                                 PhotosPicker(selection: $selectedItem, matching: .images) {
                                     SettingRow(title: "Выбрать фото фона")
                                 }
-                                .onChange(of: selectedItem) { newItem in
-                                    // Асинхронно загружаем выбранное фото и сохраняем его в AppStorage
+                                .onChange(of: selectedItem) {_, newItem in
+                                    // Асинхронно загружаем фото и сохраняем его в AppStorage
                                     Task {
                                         if let data = try? await newItem?.loadTransferable(type: Data.self) {
                                             backgroundImageData = data
@@ -32,7 +32,7 @@ struct SettingsView: View {
                                     }
                                 }
                                 
-                                // Кнопка сброса фона (появляется только если фон установлен)
+                                // Кнопка сброса фона
                                 if backgroundImageData != nil {
                                     Button(action: {
                                         backgroundImageData = nil

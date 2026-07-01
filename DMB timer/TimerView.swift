@@ -13,6 +13,12 @@ struct TimerView: View {
     var progressPercent: Double {
         let total = soldier.endDate.timeIntervalSince(soldier.startDate)
         let passed = currentDate.timeIntervalSince(soldier.startDate)
+        
+// MARK: - DEBUG print
+        let p = max(0, min((passed / total) * 100, 100))
+            print("DEBUG: Прошло \(p)%")
+// MARK: - print end
+        
         if total <= 0 { return 100.0 }
         return max(0, min((passed / total) * 100, 100))
     }
