@@ -14,5 +14,6 @@ struct DMB_timerApp: App {
         WindowGroup {
             MainTabView()
         }
+        .modelContainer(for: Soldier.self)
     }
 }

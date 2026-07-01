@@ -2,64 +2,57 @@ import SwiftUI
 import SwiftData
 
 struct AddSoldierView: View {
-    // доступ к контексту БД для сохранения
-    @Environment(\.modelContext) private var modelContext
-    // Позволяет закрыть этот экран
     @Environment(\.dismiss) private var dismiss
-
-    // Переменные состояния для хранения того, что вводит пользователь
+    @Environment(\.modelContext) private var modelContext
+    
+    // Если этот объект передан — мы в режиме редактирования
+    var soldierToEdit: Soldier?
+    
     @State private var name: String = ""
     @State private var startDate: Date = Date()
-    @State private var endDate: Date = Calendar.current.date(byAdding: .year, value: 1, to: Date()) ?? Date()
-
+    @State private var endDate: Date = Date().addingTimeInterval(86400 * 365)
+    
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    TextField("Имя", text: $name)
-                    
-                    DatePicker("Дата призыва", selection: $startDate, displayedComponents: .date)
-                        .environment(\.locale, Locale(identifier: "ru_RU"))
-                    
-                    DatePicker("Дата дембеля", selection: $endDate, displayedComponents: .date)
-                        .environment(\.locale, Locale(identifier: "ru_RU"))
-                }
-                .listRowBackground(Color(uiColor: .secondarySystemBackground))
+                TextField("Имя бойца", text: $name)
+                
+                DatePicker("Дата призыва", selection: $startDate, displayedComponents: .date)
+                    .environment(\.locale, Locale(identifier: "ru_RU")) // Русский язык
+                
+                DatePicker("Дата дембеля", selection: $endDate, displayedComponents: .date)
+                    .environment(\.locale, Locale(identifier: "ru_RU")) // Русский язык
             }
-            .scrollContentBackground(.hidden)
-            .background(Color(uiColor: .systemBackground)) // Ставим темный фон
-            .navigationTitle("Добавление солдата")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(soldierToEdit == nil ? "Добавить бойца" : "Редактировать")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { dismiss() }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                            Text("Назад")
-                        }
-                        .foregroundColor(.gray)
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Сохранить") {
+                        save()
                     }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: saveSoldier) {
-                        Image(systemName: "checkmark.square")
-                            .foregroundColor(.gray)
-                    }
-                    .disabled(name.isEmpty) // не сработает, пока не введут имя
                 }
             }
-            .preferredColorScheme(.dark) // включаем темную тему
+            // Загружаем данные при открытии, если мы пришли сюда редактировать
+            .onAppear {
+                if let soldier = soldierToEdit {
+                    name = soldier.name
+                    startDate = soldier.startDate
+                    endDate = soldier.endDate
+                }
+            }
         }
     }
-
-    // Функция сохранения
-    private func saveSoldier() {
-        let newSoldier = Soldier(name: name, startDate: startDate, endDate: endDate)
-        modelContext.insert(newSoldier) // Записываем в базу
-        dismiss() // Закрываем экран
+    
+    private func save() {
+        if let soldier = soldierToEdit {
+            // Обновляем существующего
+            soldier.name = name
+            soldier.startDate = startDate
+            soldier.endDate = endDate
+        } else {
+            // Создаем нового
+            let newSoldier = Soldier(name: name, startDate: startDate, endDate: endDate)
+            modelContext.insert(newSoldier)
+        }
+        dismiss()
     }
-}
-
-#Preview {
-    AddSoldierView()
 }

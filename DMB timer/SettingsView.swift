@@ -1,10 +1,13 @@
 import SwiftUI
+import PhotosUI
 
 struct SettingsView: View {
-    // Используем @AppStorage для автоматического сохранения настроек в память устройства
     @AppStorage("percentageAccuracy") private var percentageAccuracy = 5
+    // Сохраняем картинку в виде бинарных данных
+    @AppStorage("backgroundImageData") private var backgroundImageData: Data?
+    
     @State private var showAboutAlert = false
-    @State private var showProblemAlert = false
+    @State private var selectedItem: PhotosPickerItem?
     
     var body: some View {
         NavigationStack {
@@ -16,8 +19,33 @@ struct SettingsView: View {
                         VStack(spacing: 12) {
                             
                             // 1. Фото фона
-                            NavigationLink(destination: Text("Выбор фото фона").preferredColorScheme(.dark)) {
-                                SettingRow(title: "Фото фона")
+                            VStack(spacing: 0) {
+                                PhotosPicker(selection: $selectedItem, matching: .images) {
+                                    SettingRow(title: "Выбрать фото фона")
+                                }
+                                .onChange(of: selectedItem) { newItem in
+                                    // Асинхронно загружаем выбранное фото и сохраняем его в AppStorage
+                                    Task {
+                                        if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                                            backgroundImageData = data
+                                        }
+                                    }
+                                }
+                                
+                                // Кнопка сброса фона (появляется только если фон установлен)
+                                if backgroundImageData != nil {
+                                    Button(action: {
+                                        backgroundImageData = nil
+                                        selectedItem = nil
+                                    }) {
+                                        Text("Удалить фон (вернуть темный)")
+                                            .font(.footnote)
+                                            .foregroundColor(.red)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal)
+                                            .padding(.top, 8)
+                                    }
+                                }
                             }
                             
                             // 2. Точность процента
@@ -39,8 +67,15 @@ struct SettingsView: View {
                             .background(Color(uiColor: .secondarySystemBackground))
                             .cornerRadius(12)
                             
-                            // 3. Сообщить о проблеме
-                            Button(action: { showProblemAlert = true }) {
+                            // 3. Сообщить о проблеме (открывает почту)
+                            Button(action: {
+                                let email = "maksbuk.dev@gmail.com"
+                                let subject = "DMB Timer: Ошибка"
+                                let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+                                if let url = URL(string: "mailto:\(email)?subject=\(encodedSubject)") {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
                                 SettingRow(title: "Сообщить о проблеме")
                             }
                             
@@ -55,7 +90,6 @@ struct SettingsView: View {
                     
                     Spacer()
                     
-                    // Политика конфиденциальности внизу экрана
                     Link("Политика конфиденциальности", destination: URL(string: "https://example.com/privacy")!)
                         .font(.footnote)
                         .foregroundColor(.gray)
@@ -64,28 +98,11 @@ struct SettingsView: View {
             }
             .navigationTitle("Настройки")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Сохранить") {
-                        // В SwiftUI @AppStorage сохраняет всё автоматически,
-                        // кнопка здесь для соответствия дизайну макета.
-                    }
-                    .foregroundColor(.white)
-                    .bold()
-                }
-            }
             .preferredColorScheme(.dark)
-            // Кастомные алерты для интерактива
             .alert("О разработчике", isPresented: $showAboutAlert) {
                 Button("ОК", role: .cancel) {}
             } message: {
                 Text("Приложение разработано в рамках практики.\nАвтор: Bukatsin Maksimilian.")
-            }
-            .alert("Сообщить о проблеме", isPresented: $showProblemAlert) {
-                Button("Отмена", role: .cancel) {}
-                Button("Отправить", role: .none) {}
-            } message: {
-                Text("Опишите возникшую проблему. Логи будут отправлены разработчику автоматически.")
             }
         }
     }
