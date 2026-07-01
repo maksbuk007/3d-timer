@@ -1,12 +1,9 @@
 import SwiftUI
 
 struct TimerView: View {
-    let soldier: Soldier // Солдат, которого мы передаем с прошлого экрана
-    
-    // Создаем таймер, который срабатывает каждую 1 секунду
+    let soldier: Soldier
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
-    // Переменная для обновления интерфейса каждую секунду
     @State private var currentDate = Date()
     
     var body: some View {
@@ -15,53 +12,92 @@ struct TimerView: View {
             
             ScrollView {
                 VStack(spacing: 30) {
-                    // Вычисляем данные через наш менеджер
                     let timeData = TimeManager.calculateTime(start: soldier.startDate, end: soldier.endDate, current: currentDate)
+                    let achievements = AchievementManager.evaluate(start: soldier.startDate, end: soldier.endDate, current: currentDate)
                     
-                    // Блок процентов (пока без круга, просто текст, как в макете)
-                    VStack {
-                        Text(String(format: "%.6f %%", timeData.percent))
-                            .font(.system(size: 32, weight: .bold, design: .monospaced))
+                    // Круговой прогресс-бар
+                    CircularProgressView(percent: timeData.percent)
+                        .frame(width: 200, height: 200)
+                        .padding(.top, 20)
+                    
+                    // Карточки времени
+                    TimeCardView(title: "Прошло", days: timeData.passed.d, hours: timeData.passed.h, minutes: timeData.passed.m, seconds: timeData.passed.s)
+                    TimeCardView(title: "Осталось", days: timeData.remaining.d, hours: timeData.remaining.h, minutes: timeData.remaining.m, seconds: timeData.remaining.s)
+                    
+                    // Блок Достижений
+                    VStack(alignment: .leading, spacing: 15) {
+                        Text("Достижения")
+                            .font(.title2)
+                            .bold()
                             .foregroundColor(.white)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        
+                        ForEach(achievements) { achievement in
+                            HStack {
+                                Image(systemName: achievement.isUnlocked ? "checkmark.seal.fill" : "lock.fill")
+                                    .foregroundColor(achievement.isUnlocked ? .green : .gray)
+                                    .font(.title3)
+                                
+                                Text(achievement.title)
+                                    .foregroundColor(achievement.isUnlocked ? .white : .gray)
+                                    .strikethrough(!achievement.isUnlocked, color: .gray)
+                                
+                                Spacer()
+                            }
+                            .padding()
+                            .background(Color(uiColor: .secondarySystemBackground))
+                            .cornerRadius(10)
+                        }
                     }
-                    .padding(.top, 40)
-                    
-                    // Карточка "Прошло"
-                    TimeCardView(
-                        title: "Прошло",
-                        days: timeData.passed.d,
-                        hours: timeData.passed.h,
-                        minutes: timeData.passed.m,
-                        seconds: timeData.passed.s
-                    )
-                    
-                    // Карточка "Осталось"
-                    TimeCardView(
-                        title: "Осталось",
-                        days: timeData.remaining.d,
-                        hours: timeData.remaining.h,
-                        minutes: timeData.remaining.m,
-                        seconds: timeData.remaining.s
-                    )
-                    
-                    Spacer()
+                    .padding(.top, 20)
                 }
                 .padding(.horizontal)
             }
         }
-        // Этот модификатор "слушает" таймер и обновляет переменную currentDate
         .onReceive(timer) { input in
             currentDate = input
         }
-        .navigationTitle(soldier.name) // Имя бойца в заголовке
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle(soldier.name)
+        .navigationBarTitleDisplayMode(.inline)
         .preferredColorScheme(.dark)
     }
 }
 
-// MARK: - Вспомогательные элементы UI
+// MARK: - Элементы интерфейса
 
-// Вынесли верстку карточки времени в отдельную структуру, чтобы не дублировать код
+// Новый элемент: Круговой прогресс
+struct CircularProgressView: View {
+    var percent: Double
+    
+    var body: some View {
+        ZStack {
+            // Серый фон круга
+            Circle()
+                .stroke(lineWidth: 15)
+                .opacity(0.3)
+                .foregroundColor(.gray)
+            
+            // Цветная заполняющаяся линия
+            Circle()
+                .trim(from: 0.0, to: CGFloat(min(percent / 100, 1.0)))
+                .stroke(style: StrokeStyle(lineWidth: 15, lineCap: .round, lineJoin: .round))
+                .foregroundColor(.green) // Можно поменять на нужный цвет
+                .rotationEffect(Angle(degrees: -90)) // Чтобы круг начинался с 12 часов
+                .animation(.linear, value: percent)
+            
+            // Проценты внутри
+            VStack {
+                Text(String(format: "%.5f", percent))
+                    .font(.system(size: 28, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+                Text("%")
+                    .foregroundColor(.gray)
+            }
+        }
+    }
+}
+
+// Оставляем старые структуры без изменений
 struct TimeCardView: View {
     var title: String
     var days: Int
@@ -89,18 +125,17 @@ struct TimeCardView: View {
     }
 }
 
-// Верстка одной колонки (например, "14 \n Часов")
 struct TimeComponent: View {
     var value: Int
     var label: String
     
     var body: some View {
         VStack(spacing: 5) {
-            Text(String(format: "%02d", value)) // %02d добавляет нули, если число < 10 (например, "05")
+            Text(String(format: "%02d", value))
                 .font(.title2)
                 .bold()
                 .foregroundColor(.white)
-                .monospacedDigit() // Цифры не будут "прыгать" по ширине при смене секунд
+                .monospacedDigit()
             
             Text(label)
                 .font(.caption)
